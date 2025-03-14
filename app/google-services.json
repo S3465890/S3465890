@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "457381714045",
+    "project_id": "snapduel-43835",
+    "storage_bucket": "snapduel-43835.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:457381714045:android:9d51c63385f3ea7d8c7914",
+        "android_client_info": {
+          "package_name": "uk.ac.tees.mad.snapduel"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD807FX80VJIF-eqhnvE6V1yRh2vrBhmps"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
