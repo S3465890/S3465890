@@ -18,9 +18,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.navigation.compose.rememberNavController
+import uk.ac.tees.mad.snapduel.ui.navigation.AppNavigation
 import uk.ac.tees.mad.snapduel.ui.theme.SnapDuelTheme
 
 class MainActivity : ComponentActivity() {
@@ -29,32 +32,11 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             SnapDuelTheme {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    WelcomeScreen()
+                Surface(color = Color.White, modifier = Modifier.fillMaxSize()) {
+                    val navController = rememberNavController()
+                    AppNavigation(navController)
                 }
             }
-        }
-    }
-}
-
-@Composable
-fun WelcomeScreen() {
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Text(
-            text = "Welcome to SnapDuel!",
-            style = MaterialTheme.typography.headlineLarge,
-            textAlign = TextAlign.Center
-        )
-        Spacer(modifier = Modifier.height(20.dp))
-        Button(onClick = { /* Navigate to Auth Screen */ }) {
-            Text(text = "Get Started")
         }
     }
 }
