@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import uk.ac.tees.mad.snapduel.ui.screens.AuthScreen
 import uk.ac.tees.mad.snapduel.ui.screens.SplashScreen
 
 sealed class Screen(val route: String) {
@@ -16,7 +17,7 @@ sealed class Screen(val route: String) {
 fun AppNavigation(navController: NavHostController) {
     NavHost(navController, startDestination = Screen.Splash.route) {
         composable(Screen.Splash.route) { SplashScreen(navController) }
-        composable(Screen.Auth.route) { }
+        composable(Screen.Auth.route) { AuthScreen(navController) }
         composable(Screen.Challenge.route) { }
 
         // all other screens will be added later
