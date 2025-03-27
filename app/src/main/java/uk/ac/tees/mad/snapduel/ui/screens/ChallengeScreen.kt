@@ -4,11 +4,11 @@ import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.location.Location
 import android.net.Uri
 import android.provider.MediaStore
 import android.util.Base64
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
@@ -16,15 +16,40 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.AddAPhoto
+import androidx.compose.material.icons.filled.Image
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.ElevatedButton
+import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -40,12 +65,19 @@ import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import uk.ac.tees.mad.snapduel.ui.navigation.Screen
 import java.io.ByteArrayOutputStream
 
 @Composable
 fun ChallengeScreen(navController: NavController) {
     val context = LocalContext.current
     val dailyPrompt by remember { mutableStateOf("Something Blue") }
+    var isSubmitting by remember { mutableStateOf(false) }
+
+    val auth = FirebaseAuth.getInstance()
+    val firestore = FirebaseFirestore.getInstance()
 
     // Image-related states
     var capturedBitmap by rememberSaveable { mutableStateOf<Bitmap?>(null) }
@@ -186,6 +218,7 @@ fun ChallengeScreen(navController: NavController) {
                                 text = "Take Photo",
                                 onClick = {
                                     if (hasCameraPermission) {
+
                                         val intent =
                                             android.content.Intent(MediaStore.ACTION_IMAGE_CAPTURE)
                                         cameraLauncher.launch(intent)
@@ -218,7 +251,7 @@ fun ChallengeScreen(navController: NavController) {
                             ) {
                                 Spacer(modifier = Modifier.height(16.dp))
 
-                                // Display Captured Image
+                                // Display the aptured Image
                                 capturedBitmap?.let { bitmap ->
                                     Image(
                                         bitmap = bitmap.asImageBitmap(),
@@ -230,7 +263,7 @@ fun ChallengeScreen(navController: NavController) {
                                     )
                                 }
 
-                                // Location Tagging Toggle
+                                // Location Tagging Toggling
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -259,28 +292,45 @@ fun ChallengeScreen(navController: NavController) {
                                     )
                                 }
 
+
                                 Button(
                                     onClick = {
                                         base64Image?.let { encoded ->
-                                            // Prepare submission data
-                                            val submissionData = mapOf(
+                                            isSubmitting = true
+                                            val submissionData = hashMapOf(
                                                 "image" to encoded,
                                                 "latitude" to locationLatitude,
-                                                "longitude" to locationLongitude
+                                                "longitude" to locationLongitude,
+                                                "timestamp" to System.currentTimeMillis(),
+                                                "userId" to auth.currentUser?.uid
                                             )
-
-                                            // actual submission logic
-                                            navController.navigate("voting_route")
+                                            firestore.collection("submissions").add(submissionData)
+                                                .addOnSuccessListener {
+                                                    Toast.makeText(
+                                                        context,
+                                                        "Submission Successful!",
+                                                        Toast.LENGTH_SHORT
+                                                    ).show()
+                                                    navController.navigate(Screen.Voting.route)
+                                                }
+                                                .addOnFailureListener {
+                                                    Toast.makeText(
+                                                        context,
+                                                        "Submission Failed!",
+                                                        Toast.LENGTH_SHORT
+                                                    ).show()
+                                                }
+                                            isSubmitting = false
                                         }
                                     },
-                                    enabled = base64Image != null && locationLatitude != null && locationLongitude != null,
+                                    enabled = (base64Image != null && locationLatitude != null && locationLongitude != null && !isSubmitting),
                                     colors = ButtonDefaults.buttonColors(
                                         containerColor = Color(0xFF4CAF50)
                                     )
                                 ) {
                                     Icon(
-                                        imageVector = Icons.Filled.Send,
-                                        contentDescription = "Submit",
+                                        imageVector = Icons.AutoMirrored.Filled.Send,
+                                        contentDescription = if (isSubmitting) "Loading..." else "Submit",
                                         modifier = Modifier.size(ButtonDefaults.IconSize)
                                     )
                                     Spacer(Modifier.width(8.dp))
