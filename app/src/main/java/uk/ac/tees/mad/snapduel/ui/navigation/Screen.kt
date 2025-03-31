@@ -7,6 +7,7 @@ import androidx.navigation.compose.composable
 import uk.ac.tees.mad.snapduel.ui.screens.AuthScreen
 import uk.ac.tees.mad.snapduel.ui.screens.ChallengeScreen
 import uk.ac.tees.mad.snapduel.ui.screens.SplashScreen
+import uk.ac.tees.mad.snapduel.ui.screens.VotingScreen
 
 sealed class Screen(val route: String) {
     object Splash : Screen("splash_screen")
@@ -21,7 +22,7 @@ fun AppNavigation(navController: NavHostController) {
         composable(Screen.Splash.route) { SplashScreen(navController) }
         composable(Screen.Auth.route) { AuthScreen(navController) }
         composable(Screen.Challenge.route) { ChallengeScreen(navController) }
-        composable(Screen.Voting.route) {}
+        composable(Screen.Voting.route) { VotingScreen(navController) }
 
         // all other screens will be added later
     }
