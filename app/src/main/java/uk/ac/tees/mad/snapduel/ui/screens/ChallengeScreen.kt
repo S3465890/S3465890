@@ -51,9 +51,11 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -74,6 +76,10 @@ import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import uk.ac.tees.mad.snapduel.ui.navigation.Screen
 import java.io.ByteArrayOutputStream
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import kotlin.random.Random
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -166,6 +172,11 @@ fun ChallengeScreen(
         }
     }
 
+    LaunchedEffect(Unit) {
+        val todayDate = System.currentTimeMillis()
+
+    }
+
     Scaffold(
         containerColor = Color(0xFF1E90FF),
         contentColor = Color.White,
@@ -173,7 +184,7 @@ fun ChallengeScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "Daily Challenge"
+                        text = "SnapDuel: Daily Challenge"
                     )
                 }
             )
@@ -215,7 +226,11 @@ fun ChallengeScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 item {
-
+                    Text(
+                        text = "Submit a picture of this topic and users will vote.",
+                        style = MaterialTheme.typography.labelLarge
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
                     ElevatedCard(
                         modifier = Modifier.fillMaxWidth(),
                         colors = CardDefaults.elevatedCardColors(
@@ -223,12 +238,15 @@ fun ChallengeScreen(
                         ),
                         elevation = CardDefaults.elevatedCardElevation(8.dp)
                     ) {
+
                         Column(
                             modifier = Modifier.padding(24.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
+
+
                             Text(
-                                text = dailyPrompt,
+                                text = rememberDailyPrompt(),
                                 style = MaterialTheme.typography.headlineMedium.copy(
                                     fontWeight = FontWeight.Medium,
                                     color = Color.Black
@@ -279,7 +297,7 @@ fun ChallengeScreen(
                                 ) {
                                     Spacer(modifier = Modifier.height(16.dp))
 
-                                    // Display the aptured Image
+                                    // Display the captured image
                                     capturedBitmap?.let { bitmap ->
                                         Image(
                                             bitmap = bitmap.asImageBitmap(),
@@ -438,3 +456,19 @@ fun decodeBase64ToBitmap(encodedString: String): Bitmap {
     val decodedBytes = Base64.decode(encodedString, Base64.DEFAULT)
     return BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)
 }
+
+@Composable
+fun rememberDailyPrompt(): String {
+    val prompt = remember {
+        val date = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date()) // Get today's date as a string
+        val seed = date.hashCode().toLong() // Use the date as a seed for randomness
+        val prompts = listOf(
+            "Something Blue", "A Sunset View", "Mirror Reflection", "A Book Cover", "Street Art", "Cloud Formations"
+        )
+        prompts.shuffled(Random(seed)).first() // Generate a consistent prompt for the day
+    }
+    return prompt
+}
+
+
+

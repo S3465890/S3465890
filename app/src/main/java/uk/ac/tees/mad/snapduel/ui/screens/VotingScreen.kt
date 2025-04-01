@@ -42,6 +42,7 @@ import androidx.navigation.NavController
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 import uk.ac.tees.mad.snapduel.data.Submission
+import uk.ac.tees.mad.snapduel.ui.navigation.Screen
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -100,7 +101,7 @@ fun VotingScreen(navController: NavController) {
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(submissions) { submission ->
-                        SubmissionItem(submission)
+                        SubmissionItem(submission, navController)
                     }
                 }
             }
@@ -109,12 +110,18 @@ fun VotingScreen(navController: NavController) {
 }
 
 @Composable
-fun SubmissionItem(submission: Submission) {
+fun SubmissionItem(submission: Submission, navController: NavController) {
     val bitmap = decodeBase64ToBitmap(submission.image)
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { /*  vote action */ },
+            .clickable {
+                navController.currentBackStackEntry?.savedStateHandle?.set(
+                    "submission",
+                    submission
+                )
+                navController.navigate(Screen.PhotoDetails.route)
+            },
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
     ) {
