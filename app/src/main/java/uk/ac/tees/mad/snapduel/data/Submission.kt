@@ -13,5 +13,6 @@ data class Submission(
     val latitude: Double?,
     val longitude: Double?,
     val timestamp: Long,
-    val userId: String
+    val userId: String,
+    var votes: Int = 0
 ):Parcelable

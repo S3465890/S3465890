@@ -49,7 +49,8 @@ class ChallengeViewModel(private val application: Application) : AndroidViewMode
 
         viewModelScope.launch {
             submissionDao.insert(submission)
-            firestore.collection("submissions").add(submission)
+            firestore.collection("submissions").document(submission.id)
+                .set(submission)
                 .addOnSuccessListener {
                     _isSubmitting.value = false
 

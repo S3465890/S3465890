@@ -25,8 +25,10 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -36,10 +38,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration
+import com.google.firebase.firestore.Query
 import kotlinx.coroutines.tasks.await
 import uk.ac.tees.mad.snapduel.data.Submission
 import uk.ac.tees.mad.snapduel.ui.navigation.Screen
@@ -51,27 +56,35 @@ import java.util.Locale
 @Composable
 fun VotingScreen(navController: NavController) {
     val firestore = FirebaseFirestore.getInstance()
-    var submissions by remember { mutableStateOf<List<Submission>>(emptyList()) }
+    val submissions = remember { mutableStateListOf<Submission>() }
     var isLoading by remember { mutableStateOf(true) }
+    var listenerRegistration: ListenerRegistration? by remember { mutableStateOf(null) }
 
-    LaunchedEffect(Unit) {
-        try {
-            val snapshot = firestore.collection("submissions").get().await()
-            submissions = snapshot.documents.mapNotNull { item ->
-                Submission(
-                    id = item["id"] as String,
-                    image = item["image"] as String,
-                    latitude = item["latitude"] as Double,
-                    longitude = item["longitude"] as Double,
-                    timestamp = item["timestamp"] as Long,
-                    userId = item["userId"] as String
-                )
+    DisposableEffect(Unit) {
+
+        listenerRegistration = firestore.collection("submissions")
+            .orderBy("votes", Query.Direction.DESCENDING)
+            .addSnapshotListener { snapshot, _ ->
+                snapshot?.let {
+                    val updatedList = it.documents.mapNotNull { item ->
+
+                        Submission(
+                            id = item.id,
+                            image = item["image"] as String,
+                            latitude = item["latitude"] as Double,
+                            longitude = item["longitude"] as Double,
+                            timestamp = item["timestamp"] as Long,
+                            userId = item["userId"] as String,
+                            votes = (item["votes"] as Long).toInt(),
+                        )
+                    }
+                    submissions.clear()
+                    submissions.addAll(updatedList)
+                    isLoading = false
+                }
             }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        } finally {
-            isLoading = false
-        }
+
+        onDispose { listenerRegistration?.remove() }
     }
 
     Scaffold(
@@ -140,6 +153,12 @@ fun SubmissionItem(submission: Submission, navController: NavController) {
                     .height(200.dp)
                     .clip(MaterialTheme.shapes.medium),
                 contentScale = ContentScale.Crop
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = "Votes: ${submission.votes}",
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(top = 8.dp)
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text("Submitted by: ${submission.userId}", style = MaterialTheme.typography.bodyMedium)
