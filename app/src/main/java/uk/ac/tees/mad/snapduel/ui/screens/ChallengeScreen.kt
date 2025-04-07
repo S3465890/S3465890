@@ -36,6 +36,7 @@ import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.HowToVote
 import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
@@ -46,6 +47,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -186,6 +188,11 @@ fun ChallengeScreen(
                     Text(
                         text = "SnapDuel: Daily Challenge"
                     )
+                },
+                actions = {
+                    IconButton(onClick = { navController.navigate(Screen.Profile.route) }) {
+                        Icon(imageVector = Icons.Default.Person, contentDescription = null)
+                    }
                 }
             )
         },
@@ -460,10 +467,18 @@ fun decodeBase64ToBitmap(encodedString: String): Bitmap {
 @Composable
 fun rememberDailyPrompt(): String {
     val prompt = remember {
-        val date = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date()) // Get today's date as a string
+        val date = SimpleDateFormat(
+            "yyyy-MM-dd",
+            Locale.getDefault()
+        ).format(Date()) // Get today's date as a string
         val seed = date.hashCode().toLong() // Use the date as a seed for randomness
         val prompts = listOf(
-            "Something Blue", "A Sunset View", "Mirror Reflection", "A Book Cover", "Street Art", "Cloud Formations"
+            "Something Blue",
+            "A Sunset View",
+            "Mirror Reflection",
+            "A Book Cover",
+            "Street Art",
+            "Cloud Formations"
         )
         prompts.shuffled(Random(seed)).first() // Generate a consistent prompt for the day
     }

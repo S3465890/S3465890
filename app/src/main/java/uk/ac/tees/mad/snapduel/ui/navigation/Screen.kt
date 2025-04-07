@@ -4,10 +4,12 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.google.firebase.Firebase
 import uk.ac.tees.mad.snapduel.data.Submission
 import uk.ac.tees.mad.snapduel.ui.screens.AuthScreen
 import uk.ac.tees.mad.snapduel.ui.screens.ChallengeScreen
 import uk.ac.tees.mad.snapduel.ui.screens.PhotoDetailsScreen
+import uk.ac.tees.mad.snapduel.ui.screens.ProfileScreen
 import uk.ac.tees.mad.snapduel.ui.screens.SplashScreen
 import uk.ac.tees.mad.snapduel.ui.screens.VotingScreen
 
@@ -17,6 +19,7 @@ sealed class Screen(val route: String) {
     object Challenge : Screen("challenge_screen")
     object Voting : Screen("voting_screen")
     object PhotoDetails : Screen("photo_details_screen")
+    object Profile : Screen("profile_screen")
 }
 
 @Composable
@@ -35,7 +38,9 @@ fun AppNavigation(navController: NavHostController) {
                 PhotoDetailsScreen(navController, it)
             }
         }
-
+composable(Screen.Profile.route) {
+    ProfileScreen(navController)
+}
 
         // all other screens will be added later
     }
