@@ -1,11 +1,15 @@
 package uk.ac.tees.mad.snapduel.ui.screens
 
 
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -15,11 +19,16 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -33,13 +42,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.google.firebase.Firebase
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.FirebaseFirestore
 import uk.ac.tees.mad.snapduel.data.Submission
@@ -48,14 +60,29 @@ import uk.ac.tees.mad.snapduel.ui.navigation.Screen
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(navController: NavController) {
+    val context = LocalContext.current
     val submissions = remember { mutableStateListOf<Submission>() }
     var totalVotes by remember { mutableStateOf(0) }
-    val db = FirebaseFirestore.getInstance()
+    var showSettings by remember { mutableStateOf(false) }
 
+    val db = FirebaseFirestore.getInstance()
     val userId = Firebase.auth.currentUser?.uid
 
-    // Fetch user submissions and calculate total votes
+
+    var username by remember { mutableStateOf("") }
+    var bio by remember { mutableStateOf("") }
+
+
+    // Fetching user submissions and calculate total votes
     DisposableEffect(userId) {
+
+        val userListener =
+            db.collection("users").document(userId ?: "").addSnapshotListener { snapshot, _ ->
+                snapshot?.let {
+                    username = it.getString("username") ?: "User"
+                    bio = it.getString("bio") ?: "No bio available"
+                }
+            }
         val listenerRegistration = db.collection("submissions")
             .whereEqualTo("userId", userId)
             .addSnapshotListener { snapshot, _ ->
@@ -80,8 +107,10 @@ fun ProfileScreen(navController: NavController) {
             }
 
         onDispose {
+            userListener.remove()
             listenerRegistration.remove()
         }
+
     }
 
     Scaffold(
@@ -100,6 +129,11 @@ fun ProfileScreen(navController: NavController) {
                             null
                         )
                     }
+                },
+                actions = {
+                    IconButton(onClick = { showSettings = true }) {
+                        Icon(Icons.Default.Settings, contentDescription = "Settings")
+                    }
                 }
             )
         }
@@ -111,26 +145,42 @@ fun ProfileScreen(navController: NavController) {
                 .padding(16.dp)
         ) {
 
-            // User Score Display
+
+            // User Score
             Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 16.dp),
+                modifier = Modifier,
                 shape = RoundedCornerShape(12.dp),
                 elevation = CardDefaults.cardElevation(4.dp)
             ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(text = "Total Votes", fontSize = 18.sp, fontWeight = FontWeight.Medium)
-                    Text(
-                        text = totalVotes.toString(),
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.Bold
-                    )
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        // User Info
+                        Text(text = username, fontSize = 20.sp, fontWeight = FontWeight.Medium)
+                        Text(
+                            text = bio,
+                            fontSize = 16.sp,
+                            color = Color.Gray
+                        )
+                    }
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(text = "Total Votes", fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                        Text(
+                            text = totalVotes.toString(),
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
             }
+            Spacer(Modifier.height(16.dp))
 
             // User Submissions List
             LazyVerticalGrid(
@@ -148,6 +198,68 @@ fun ProfileScreen(navController: NavController) {
             }
         }
     }
+    if (showSettings) {
+        AccountSettingsDialog(
+            userId = userId ?: "",
+            username = username,
+            bio = bio,
+            navController = navController,
+            onClose = { showSettings = false }
+        )
+    }
+}
+
+@Composable
+fun AccountSettingsDialog(
+    userId: String,
+    username: String,
+    bio: String,
+    onClose: () -> Unit,
+    navController: NavController,
+    auth: FirebaseAuth = FirebaseAuth.getInstance(),
+) {
+    var newUsername by remember { mutableStateOf(username) }
+    var newBio by remember { mutableStateOf(bio) }
+    val db = FirebaseFirestore.getInstance()
+    val context = LocalContext.current
+
+    AlertDialog(
+        onDismissRequest = onClose,
+        title = { Text("Account Settings") },
+        text = {
+            Column {
+                OutlinedTextField(
+                    value = newUsername,
+                    onValueChange = { newUsername = it },
+                    label = { Text("Username") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = newBio,
+                    onValueChange = { newBio = it },
+                    label = { Text("Bio") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        confirmButton = {
+            Button(onClick = {
+                db.collection("users").document(userId).set(
+                    mapOf("username" to newUsername, "bio" to newBio)
+                ).addOnSuccessListener {
+
+                    Toast.makeText(context, "Profile updated", Toast.LENGTH_SHORT).show()
+                    onClose()
+                }.addOnFailureListener {
+                    Toast.makeText(context, "Error", Toast.LENGTH_SHORT).show()
+                    it.printStackTrace()
+                }
+            }) {
+                Text("Save")
+            }
+        },
+
+    )
 }
 
 @Composable
