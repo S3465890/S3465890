@@ -258,7 +258,22 @@ fun AccountSettingsDialog(
                 Text("Save")
             }
         },
+        dismissButton = {
+            Column {
+                Button(
+                    colors = ButtonDefaults.buttonColors(Color.Red),
+                    onClick = {
+                        auth.signOut()
+                        navController.navigate(Screen.Auth.route) {
+                            popUpTo(0)
+                        }
+                    }
+                ) {
+                    Text("Logout")
+                }
 
+            }
+        }
     )
 }
 
