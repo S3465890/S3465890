@@ -66,7 +66,7 @@ fun ProfileScreen(navController: NavController) {
     var showSettings by remember { mutableStateOf(false) }
 
     val db = FirebaseFirestore.getInstance()
-    val userId = Firebase.auth.currentUser?.uid
+    val userId by remember { mutableStateOf(Firebase.auth.currentUser?.uid ?: "") }
 
 
     var username by remember { mutableStateOf("") }
@@ -77,7 +77,7 @@ fun ProfileScreen(navController: NavController) {
     DisposableEffect(userId) {
 
         val userListener =
-            db.collection("users").document(userId ?: "").addSnapshotListener { snapshot, _ ->
+            db.collection("users").document(userId).addSnapshotListener { snapshot, _ ->
                 snapshot?.let {
                     username = it.getString("username") ?: "User"
                     bio = it.getString("bio") ?: "No bio available"
@@ -282,6 +282,7 @@ fun SubmissionItem(submission: Submission, onClick: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
+            .height(250.dp)
             .padding(8.dp)
             .clickable { onClick() }
     ) {
